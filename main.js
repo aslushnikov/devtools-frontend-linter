@@ -128,14 +128,18 @@ SourceFile.prototype = {
             }
             if (node.type === "CallExpression" &&
                     node.callee.type === "MemberExpression" &&
+                    node.callee.property &&
+                    node.callee.property.name === "call" &&
                     node.arguments.length > 0 &&
                     node.arguments[0].type === "ThisExpression") {
                 if (!node.callee.object) {
                     console.log(src.text(node));
                     throw "failed";
                 }
-                instantiations[src.text(node.callee.object)] = true;
-                return true; // break walker recursion
+                var name = src.text(node.callee.object);
+                if (name.charAt(0) >= 'A' && name.charAt(0) <= 'Z')
+                    instantiations[src.text(node.callee.object)] = true;
+                return false; // break walker recursion
             }
             // setting class constructor
             if (node.type === "VariableDeclarator") {
@@ -185,18 +189,27 @@ JSClass.prototype = {
 
 var ProgramClasses = function() {
     this._classesDictionary = {};
+    this._interfacesDictionary = {};
 }
 
 ProgramClasses.prototype = {
     addSource: function(src, classInstances) {
         src.iterateClasses(function(jsclass) {
-            if (!(jsclass.name in classInstances))
-                return;
-            if (this._classesDictionary[jsclass.name]) {
-                console.warn(jsclass.name + " was defined in " + this._classesDictionary[jsclass.name].name() + " and got redefined in " + src.name);
+            var activeDict = this._classesDictionary;
+            if (!(jsclass.name in classInstances)) {
+                if (!jsclass.init || !jsclass.proto)
+                    return;
+                activeDict = this._interfacesDictionary;
             }
-            this._classesDictionary[jsclass.name] = src;
+            if (activeDict[jsclass.name]) {
+                console.warn(jsclass.name + " was defined in " + activeDict[jsclass.name].name() + " and got redefined in " + src.name);
+            }
+            activeDict[jsclass.name] = src;
         }.bind(this));
+    },
+
+    hasInterface: function(name) {
+        return !!this._interfacesDictionary[name];
     },
 
     iterateClasses: function(exec) {
@@ -245,9 +258,11 @@ program.iterateClasses(function(jsclass) {
     if (!jsclass.superClass)
         return;
     var sc = program.classForName(jsclass.superClass);
-    if (!sc)
-        console.warn("Could not find super class '" + jsclass.superClass + "'");
-    else
+    if (!sc) {
+        // sometimes interface is defined as a __proto__ property
+        if (!program.hasInterface(jsclass.superClass))
+            console.warn("Could not find super class '" + jsclass.superClass + "'");
+    } else
         sc.subClasses[jsclass.name] = true;
 });
 
