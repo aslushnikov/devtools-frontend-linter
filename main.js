@@ -24,11 +24,8 @@ function walkMany(nodes, visitor) {
 
 var SourceFile = function(name, src) {
     this._name = name;
+    this._src = src;
     this._lines = src.split('\n');
-    this._ast = esprima.parse(src, {
-        //tokens: true
-        loc: true
-    });
     this._classes = {};
 }
 
@@ -46,6 +43,12 @@ SourceFile.prototype = {
     },
 
     ast: function() {
+        if (!this._ast) {
+            this._ast = esprima.parse(this._src, {
+                //tokens: true
+                loc: true
+            });
+        }
         return this._ast;
     },
 
@@ -242,11 +245,24 @@ var classInstances = {};
 var program = new ProgramClasses();
 var files = [];
 // read all files from input
+console.time("Read files");
 for(var i = 2; i < process.argv.length; ++i) {
     var file = SourceFile.loadSync(process.argv[i]);
-    file.analyze(classInstances);
     files.push(file);
 }
+console.timeEnd("Read files");
+console.time("Generating AST");
+for(var i = 0; i < files.length; ++i) {
+    files[i].ast();
+}
+console.timeEnd("Generating AST");
+
+console.time("Inferring ivars");
+for(var i = 0; i < files.length; ++i) {
+    files[i].analyze(classInstances);
+}
+console.timeEnd("Inferring ivars");
+
 for(var i = 0; i < files.length; ++i) {
     program.addSource(files[i], classInstances);
 }
