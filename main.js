@@ -63,12 +63,21 @@ function text(srcLines, node) {
 // MAIN CODE
 var esprima = require('esprima')
   , fs = require('fs');
-var src = fs.readFileSync("test2.js", "utf-8");
+
+var src = "";
+console.time("reading sources");
+for(var i = 2; i < process.argv.length; ++i) {
+    src += fs.readFileSync(process.argv[i], "utf-8");
+}
+console.timeEnd("reading sources");
+var lines = src.split('\n');
+console.log("SLOC: " + lines.length);
+console.time("building ast");
 var ast = esprima.parse(src, {
     //tokens: true
     loc: true
 });
-var lines = src.split('\n');
+console.timeEnd("building ast");
 var classInstances = {};
 
 function cutPrototype(name) {
@@ -114,11 +123,7 @@ for(var i = 0; i < classes.length; ++i) {
     //console.log(jsclass.name + "init: " + (!!jsclass.init) + " proto: " + (!!jsclass.proto));
 }
 
-// leave only those classes which were instantiated
-classes = classes.filter(function(elem) {
-    return elem.name in classInstances;
-});
-
+console.log("Processed classes: " + classes.length);
 
 function buildInstanceVars(jsclass) {
     var list = {};
@@ -171,4 +176,28 @@ for(var i = 0; i < classes.length; ++i) {
         sc.subClasses[jsclass.name] = true;
 }
 
+function copy(dict) {
+    var res = {};
+    for(var i in dict)
+        res[i] = dict[i];
+    return res;
+}
 
+function checkClassHierarchy(inherited, jsclass) {
+    for(var ivar in jsclass.instanceVars) {
+        if (ivar.charAt(0) !== "_") continue;
+        if (ivar in inherited)
+            console.log(jsclass.name + "." + ivar + " overrides value defined in " + inherited[ivar]);
+        inherited[ivar] = jsclass.name;
+    }
+    for(var subclass in jsclass.subClasses) {
+        checkClassHierarchy(copy(inherited), JSClass.forName(subclass));
+    }
+}
+
+for(var i = 0; i < classes.length; ++i) {
+    var jsclass = classes[i];
+    if (jsclass.superClass)
+        continue;
+    checkClassHierarchy({}, jsclass);
+}
