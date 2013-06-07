@@ -126,6 +126,17 @@ SourceFile.prototype = {
                 instantiations[src.text(node.callee)] = true;
                 return true; // break walker recursion
             }
+            if (node.type === "CallExpression" &&
+                    node.callee.type === "MemberExpression" &&
+                    node.arguments.length > 0 &&
+                    node.arguments[0].type === "ThisExpression") {
+                if (!node.callee.object) {
+                    console.log(src.text(node));
+                    throw "failed";
+                }
+                instantiations[src.text(node.callee.object)] = true;
+                return true; // break walker recursion
+            }
             // setting class constructor
             if (node.type === "VariableDeclarator") {
                 if (node.init && node.init.type === "FunctionExpression") {
