@@ -26,11 +26,15 @@ var JSClass = function(name) {
     this.name = name;
     this.init = null;
     this.proto = null;
+    this.subClasses = {};
 }
 JSClass._classes = {};
-JSClass.find = function(name) {
+JSClass.getOrCreate = function(name) {
     if (!JSClass._classes[name])
         JSClass._classes[name] = new JSClass(name);
+    return JSClass._classes[name];
+}
+JSClass.forName = function(name) {
     return JSClass._classes[name];
 }
 JSClass.list = function() {
@@ -80,14 +84,14 @@ function visitor(node) {
     // setting class constructor
     if (node.type === "VariableDeclarator") {
         if (node.init && node.init.type === "FunctionExpression") {
-            JSClass.find(text(lines, node.id)).init = node.init;
+            JSClass.getOrCreate(text(lines, node.id)).init = node.init;
             return false;
         }
     }
     if (node.type === "AssignmentExpression") {
         // setting class constructor
         if (node.left && node.right && node.right.type === "FunctionExpression") {
-            JSClass.find(text(lines, node.left)).init = node.right;
+            JSClass.getOrCreate(text(lines, node.left)).init = node.right;
             return false;
         }
         // setting class prototype
@@ -95,7 +99,7 @@ function visitor(node) {
             var name = text(lines, node.left);
             var withoutPrototype = cutPrototype(name);
             if (withoutPrototype) {
-                JSClass.find(withoutPrototype).proto = node.right;
+                JSClass.getOrCreate(withoutPrototype).proto = node.right;
                 return false;
             }
         }
@@ -111,11 +115,10 @@ for(var i = 0; i < classes.length; ++i) {
 }
 
 // leave only those classes which were instantiated
-/*
 classes = classes.filter(function(elem) {
     return elem.name in classInstances;
 });
-*/
+
 
 function buildInstanceVars(jsclass) {
     var list = {};
@@ -150,10 +153,22 @@ function buildSuperclass(jsclass) {
     }
 }
 
+// parse super classes & instance variables
 for(var i = 0; i < classes.length; ++i) {
     buildInstanceVars(classes[i]);
     buildSuperclass(classes[i]);
-    if (classes[i].superClass)
-        console.log(classes[i].name + " <- " + classes[i].superClass);
 }
+
+// build subclasses
+for(var i = 0; i < classes.length; ++i) {
+    var jsclass = classes[i];
+    if (!jsclass.superClass)
+        continue;
+    var sc = JSClass.forName(jsclass.superClass);
+    if (!sc)
+        console.warn("Could not find super class '" + jsclass.superClass + "'");
+    else
+        sc.subClasses[jsclass.name] = true;
+}
+
 

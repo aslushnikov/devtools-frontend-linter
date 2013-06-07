@@ -1052,3 +1052,5 @@ WebInspector.CodeMirrorTextEditor.FixWordMovement = function(codeMirror)
     keyMap["Shift-" + rightKey] = moveRight.bind(this, true);
     codeMirror.addKeyMap(keyMap);
 }
+
+new WebInspector.CodeMirrorTextEditor();
