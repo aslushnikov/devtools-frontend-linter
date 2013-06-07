@@ -1,3 +1,27 @@
+Array.prototype.filter = function(filter) {
+    var res = [];
+    for(var i = 0; i < this.length; ++i)
+        if (filter(this[i])) res.push(this[i]);
+    return res;
+}
+
+function walker(node, visitor) {
+    if (visitor(node))
+        return;
+    for(var child in node) {
+        if (typeof node[child] === "object") {
+            var c = node[child];
+            if (c !== null) walker(c, visitor);
+        }
+    }
+}
+
+function walkMany(nodes, visitor) {
+    for(var i = 0; i < nodes.length; ++i)
+        if (nodes[i] !== null)
+            walker(nodes[i], visitor);
+}
+
 var SourceFile = function(name, src) {
     this._name = name;
     this._lines = src.split('\n');
@@ -49,95 +73,13 @@ SourceFile.prototype = {
             txt += srcLines[i].trim();
         }
         txt += srcLines[loc.end.line - 1].substring(0, loc.end.column).trim();
-    }
-};
+    },
 
-Array.prototype.filter = function(filter) {
-    var res = [];
-    for(var i = 0; i < this.length; ++i)
-        if (filter(this[i])) res.push(this[i]);
-    return res;
-}
+    _cutPrototype: function(name) {
+        return /.prototype$/.test(name) ? name.substr(0, name.length - 10) : null;
+    },
 
-function walker(node, visitor) {
-    if (visitor(node))
-        return;
-    for(var child in node) {
-        if (typeof node[child] === "object") {
-            var c = node[child];
-            if (c !== null) walker(c, visitor);
-        }
-    }
-}
-
-function walkMany(nodes, visitor) {
-    for(var i = 0; i < nodes.length; ++i)
-        if (nodes[i] !== null)
-            walker(nodes[i], visitor);
-}
-
-var JSClass = function(name, sourceFile) {
-    this.name = name;
-    this.init = null;
-    this.proto = null;
-    this.subClasses = {};
-    this._sourceFile = sourceFile;
-}
-
-JSClass.prototype = {
-    text: function(node) {
-        return this._sourceFile.text(node);
-    }
-};
-
-// MAIN CODE
-var esprima = require('esprima')
-  , fs = require('fs')
-  , colors = require('colors');
-
-var src = SourceFile.loadSync(process.argv[2]);
-console.log("SLOC: " + src.sloc());
-
-var classInstances = {};
-
-function cutPrototype(name) {
-    return /.prototype$/.test(name) ? name.substr(0, name.length - 10) : null;
-}
-
-function analyze(src) {
-    walker(src.ast(), function(node) {
-        // logging class instantiation
-        if (node.type === "NewExpression") {
-            classInstances[src.text(node.callee)] = true;
-            return true; // break walker recursion
-        }
-        // setting class constructor
-        if (node.type === "VariableDeclarator") {
-            if (node.init && node.init.type === "FunctionExpression") {
-                src.classForName(src.text(node.id), true).init = node.init;
-                return false;
-            }
-        }
-        if (node.type === "AssignmentExpression") {
-            // setting class constructor
-            if (node.left && node.right && node.right.type === "FunctionExpression") {
-                src.classForName(src.text(node.left), true).init = node.right;
-                return false;
-            }
-            // setting class prototype
-            if (node.left && node.right && node.right.type === "ObjectExpression") {
-                var name = src.text(node.left);
-                var withoutPrototype = cutPrototype(name);
-                if (withoutPrototype) {
-                    src.classForName(withoutPrototype, true).proto = node.right;
-                    return false;
-                }
-            }
-        }
-        return false;
-    });
-
-    function buildInstanceVars(jsclass) {
+    _buildInstanceVars: function(jsclass) {
         var list = {};
         walkMany([jsclass.init, jsclass.proto], function(node) {
             if (node.type === "AssignmentExpression" && node.left) {
@@ -154,45 +96,156 @@ function analyze(src) {
             }
         }
         jsclass.instanceVars = list;
-    }
+    },
 
-    function buildSuperclass(jsclass) {
+    _buildSuperclass: function(jsclass) {
         if (!jsclass.proto)
             return;
         for(var i = 0; i < jsclass.proto.properties.length; ++i) {
             var prop = jsclass.proto.properties[i];
             if (prop.type === "Property" && prop.key && prop.key.type === "Identifier" && prop.key.name === "__proto__") {
                 console.assert(prop.value && prop.value.loc.start.line === prop.value.loc.end.line);
-                var superClass = cutPrototype(jsclass.text(prop.value));
+                var superClass = this._cutPrototype(jsclass.text(prop.value));
                 console.assert(superClass);
                 jsclass.superClass = superClass;
             }
         }
+    },
+
+    iterateClasses: function(exec) {
+        for(var className in this._classes) {
+            exec(this._classes[className]);
+        }
+    },
+
+    analyze: function(instantiations) {
+        var src = this;
+        walker(this.ast(), function(node) {
+            // logging class instantiation
+            if (node.type === "NewExpression") {
+                instantiations[src.text(node.callee)] = true;
+                return true; // break walker recursion
+            }
+            // setting class constructor
+            if (node.type === "VariableDeclarator") {
+                if (node.init && node.init.type === "FunctionExpression") {
+                    src.classForName(src.text(node.id), true).init = node.init;
+                    return false;
+                }
+            }
+            if (node.type === "AssignmentExpression") {
+                // setting class constructor
+                if (node.left && node.right && node.right.type === "FunctionExpression") {
+                    src.classForName(src.text(node.left), true).init = node.right;
+                    return false;
+                }
+                // setting class prototype
+                if (node.left && node.right && node.right.type === "ObjectExpression") {
+                    var name = src.text(node.left);
+                    var withoutPrototype = src._cutPrototype(name);
+                    if (withoutPrototype) {
+                        src.classForName(withoutPrototype, true).proto = node.right;
+                        return false;
+                    }
+                }
+            }
+            return false;
+        });
+        this.iterateClasses(function(jsclass) {
+            src._buildInstanceVars(jsclass);
+            src._buildSuperclass(jsclass);
+        });
     }
-    var classes = src.allClasses();
-    // parse super classes & instance variables
-    for(var i = 0; i < classes.length; ++i) {
-        buildInstanceVars(classes[i]);
-        buildSuperclass(classes[i]);
+};
+
+var JSClass = function(name, sourceFile) {
+    this.name = name;
+    this.init = null;
+    this.proto = null;
+    this.subClasses = {};
+    this._sourceFile = sourceFile;
+}
+
+JSClass.prototype = {
+    text: function(node) {
+        return this._sourceFile.text(node);
+    }
+};
+
+var ProgramClasses = function() {
+    this._classesDictionary = {};
+}
+
+ProgramClasses.prototype = {
+    addSource: function(src, classInstances) {
+        src.iterateClasses(function(jsclass) {
+            if (!(jsclass.name in classInstances))
+                return;
+            if (this._classesDictionary[jsclass.name]) {
+                console.warn(jsclass.name + " was defined in " + this._classesDictionary[jsclass.name].name + " and got redefined in " + src.name);
+            }
+            this._classesDictionary[jsclass.name] = src;
+        }.bind(this));
+    },
+
+    iterateClasses: function(exec) {
+        for(var className in this._classesDictionary) {
+            exec(this._classesDictionary[className].classForName(className));
+        }
+    },
+
+    classForName: function(name) {
+        if (!this._classesDictionary[name])
+            console.error("Didn't load " + name + " class!");
+        return this._classesDictionary[name].classForName(name);
+    },
+
+    classesAmount: function() {
+        var num = 0;
+        this.iterateClasses(function(jsclass) {
+            ++num;
+        });
+        return num;
     }
 }
-analyze(src);
 
-var classes = src.allClasses();
+// MAIN CODE
+var esprima = require('esprima')
+  , fs = require('fs')
+  , colors = require('colors');
 
-console.log("Processed classes: " + classes.length);
+var classInstances = {};
+var files = [];
+// read all files from input
+for(var i = 2; i < process.argv.length; ++i) {
+    files.push(SourceFile.loadSync(process.argv[i]));
+}
+// analyze all files
+for(var i = 0; i < files.length; ++i) {
+    files[i].analyze(classInstances);
+}
+
+var program = new ProgramClasses();
+// merge classes and check that the same class is not defined in different files
+var classesDictionary = {};
+for(var i = 0; i < files.length; ++i) {
+    program.addSource(files[i], classInstances);
+}
+// convert dictionary to array of classes
+var classes = [];
+
+console.log("Loaded classes: " + program.classesAmount());
 
 // build subclasses
-for(var i = 0; i < classes.length; ++i) {
-    var jsclass = classes[i];
+program.iterateClasses(function(jsclass) {
     if (!jsclass.superClass)
-        continue;
-    var sc = src.classForName(jsclass.superClass);
+        return;
+    var sc = program.classForName(jsclass.superClass);
     if (!sc)
         console.warn("Could not find super class '" + jsclass.superClass + "'");
     else
         sc.subClasses[jsclass.name] = true;
-}
+});
 
 function copy(dict) {
     var res = {};
@@ -204,18 +257,17 @@ function copy(dict) {
 function checkClassHierarchy(inherited, jsclass) {
     for(var ivar in jsclass.instanceVars) {
         if (ivar.charAt(0) !== "_") continue;
-        if (ivar in inherited)
-            console.log(jsclass.name + "." + ivar + " overrides value defined in ".grey + inherited[ivar]);
-        inherited[ivar] = jsclass.name;
+        if ((ivar in inherited) && inherited[ivar]._sourceFile !== jsclass._sourceFile)
+            console.log(jsclass.name + "." + ivar + " overrides value defined in ".grey + inherited[ivar].name);
+        inherited[ivar] = jsclass;
     }
     for(var subclass in jsclass.subClasses) {
-        checkClassHierarchy(copy(inherited), src.classForName(subclass));
+        checkClassHierarchy(copy(inherited), program.classForName(subclass));
     }
 }
 
-for(var i = 0; i < classes.length; ++i) {
-    var jsclass = classes[i];
+program.iterateClasses(function(jsclass){
     if (jsclass.superClass)
-        continue;
+        return;
     checkClassHierarchy({}, jsclass);
-}
+});
