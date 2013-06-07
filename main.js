@@ -182,7 +182,7 @@ ProgramClasses.prototype = {
             if (!(jsclass.name in classInstances))
                 return;
             if (this._classesDictionary[jsclass.name]) {
-                console.warn(jsclass.name + " was defined in " + this._classesDictionary[jsclass.name].name + " and got redefined in " + src.name);
+                console.warn(jsclass.name + " was defined in " + this._classesDictionary[jsclass.name].name() + " and got redefined in " + src.name);
             }
             this._classesDictionary[jsclass.name] = src;
         }.bind(this));
@@ -196,7 +196,7 @@ ProgramClasses.prototype = {
 
     classForName: function(name) {
         if (!this._classesDictionary[name])
-            console.error("Didn't load " + name + " class!");
+            return null;
         return this._classesDictionary[name].classForName(name);
     },
 
@@ -215,24 +215,17 @@ var esprima = require('esprima')
   , colors = require('colors');
 
 var classInstances = {};
+var program = new ProgramClasses();
 var files = [];
 // read all files from input
 for(var i = 2; i < process.argv.length; ++i) {
-    files.push(SourceFile.loadSync(process.argv[i]));
+    var file = SourceFile.loadSync(process.argv[i]);
+    file.analyze(classInstances);
+    files.push(file);
 }
-// analyze all files
-for(var i = 0; i < files.length; ++i) {
-    files[i].analyze(classInstances);
-}
-
-var program = new ProgramClasses();
-// merge classes and check that the same class is not defined in different files
-var classesDictionary = {};
 for(var i = 0; i < files.length; ++i) {
     program.addSource(files[i], classInstances);
 }
-// convert dictionary to array of classes
-var classes = [];
 
 console.log("Loaded classes: " + program.classesAmount());
 
