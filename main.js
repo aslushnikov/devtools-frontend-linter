@@ -62,7 +62,8 @@ function text(srcLines, node) {
 
 // MAIN CODE
 var esprima = require('esprima')
-  , fs = require('fs');
+  , fs = require('fs')
+  , colors = require('colors');
 
 var src = "";
 console.time("reading sources");
@@ -187,7 +188,7 @@ function checkClassHierarchy(inherited, jsclass) {
     for(var ivar in jsclass.instanceVars) {
         if (ivar.charAt(0) !== "_") continue;
         if (ivar in inherited)
-            console.log(jsclass.name + "." + ivar + " overrides value defined in " + inherited[ivar]);
+            console.log(jsclass.name + "." + ivar + " overrides value defined in ".grey + inherited[ivar]);
         inherited[ivar] = jsclass.name;
     }
     for(var subclass in jsclass.subClasses) {
