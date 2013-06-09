@@ -9,7 +9,9 @@
   "dependencies": {
     "esprima": ">=1.0.3",
     "colors": ">=0.6.0",
-    "istanbul": ">=0.1.36"
+    "istanbul": ">=0.1.36",
+    "should": ">=1.2.2",
+    "mocha": ">=1.10.0"
   },
   "devDependencies": {},
   "optionalDependencies": {},

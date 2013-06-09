@@ -186,7 +186,7 @@ function classPrototypes(ast) {
             }
             var className = tokens.slice(0, idx).join(".");
             var classPrototype = protoWithName(className);
-            classPrototype.props[tokens[idx + 1]] = node.right;
+            parsePropertyName(classPrototype, tokens[idx + 1], node.right);
             return;
         }
     });
