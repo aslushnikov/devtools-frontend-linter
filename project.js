@@ -31,7 +31,7 @@ Project.prototype = {
             if (proto && proto.fileName !== init.fileName)
                 throw new Error("Bad practice: class constructor and prototype defined in different files");
             res[className] = {
-                fileName: fileName,
+                fileName: init.fileName,
                 jsclass: new JSClass(className, init, proto)
             };
         }
@@ -46,7 +46,7 @@ Project.prototype = {
             if (proto && proto.fileName !== init.fileName)
                 throw new Error("Bad practice: class constructor and prototype defined in different files");
             res[className] = {
-                fileName: fileName,
+                fileName: init.fileName,
                 jsclass: new JSClass(className, init, proto)
             };
         }
