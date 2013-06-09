@@ -1,11 +1,5 @@
 var esprima = require('esprima')
-  , fs = require('fs')
   , walker = require('./ast-walker.js');
-
-console.assert(process.argv.length === 3);
-fs.readFile(process.argv[2], "utf-8", function(err, data) {
-    var ast = parse(data);
-});
 
 function parse(data) {
     return esprima.parse(data, {});
@@ -151,6 +145,7 @@ function classPrototypes(ast) {
             return;
         }
     });
+    return prototypes;
 }
 
 function memberOrIdentifier(node) {
@@ -166,3 +161,10 @@ function hasPrototype(node) {
     var tokens = walker.flattenStaticMemberExpression(node);
     return tokens && tokens.indexOf("prototype") !== -1;
 }
+
+exports = {
+    parseAST: parse,
+    classUsages: classUsages,
+    definedFunctions: definedFunctions,
+    classPrototypes: classPrototypes
+};
