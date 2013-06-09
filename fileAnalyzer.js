@@ -80,29 +80,89 @@ function definedFunctions(ast) {
  *     - Foo.prototype = new Bar();
  */
 function classPrototypes(ast) {
-    var classes = {};
+    var prototypes = {};
+    function protoWithName(className) {
+        prototypes[className] = prototypes[className] || {
+            superClass: null,
+            props: {}
+        };
+        return prototypes[className];
+    }
     walker.walk(ast, function(node) {
         // Foo.prototype = { .. }
         if (node.type === "AssignmentExpression" &&
             node.left.type === "MemberExpression" &&
+            endsWithPrototype(node.left) &&
             node.right.type === "ObjectExpression") {
             var tokens = walker.flattenStaticMemberExpression(node.left);
             if (tokens.pop() !== "prototype")
                 return;
             var className = tokens.join(".");
-            classes[className] = classes[className] || {
-                superClass: null,
-                props: {}
-            };
-            var classPrototype = classes[className];
+            var classPrototype = protoWithName(className);
             for(var i = 0; i < node.right.properties.length; ++i) {
                 var rProp = node.right.properties[i];
-                classPrototype.props[nProp.key.name || nProp.key.value] = rProp.value;
+                // property key is either foo or "foo"
+                var propertyName = rProp.key.name || rProp.key.value;
+                if (propertyName === "__proto__")
+                    classPrototype.superClass = rProp.value;
+                else
+                    classPrototype.props[propertyName] = rProp.value;
             }
             return;
         }
-        // Foo.prototype.bar = ...
-        //TODO
+        // Foo.prototype = new Bar
+        if (node.type === "AssignmentExpression" &&
+            node.left.type === "MemberExpression" &&
+            endsWithPrototype(node.left) &&
+            node.right.type === "NewExpression" &&
+            memberOrIdentifier(node.right.callee)) {
+            var tokens = walker.flattenStaticMemberExpression(node.left);
+            if (!tokens || tokens.pop() !== "prototype")
+                return;
+            var className = tokens.join(".");
 
+            var superClassName;
+            if (node.right.callee.type === "Identifier")
+                superClassName = node.right.callee.name;
+            else {
+                var tokens = walker.flattenStaticMemberExpression(node.right.callee);
+                if (!tokens)
+                    return;
+                superClassName = tokens.join(".");
+            }
+            var classPrototype = protoWithName(className);
+            classPrototype.superClass = superClassName;
+            return;
+        }
+        // Foo.prototype.bar = ...
+        if (node.type === "AssignmentExpression" &&
+            node.left.type === "MemberExpression" &&
+            !endsWithPrototype(node.left) &&
+            hasPrototype(node.left)) {
+            var tokens = walker.flattenStaticMemberExpression(node);
+            var idx = tokens.indexOf("prototype");
+            // that's smth like "prototype.foo =.." - wierd case
+            if (idx === 0) {
+                return;
+            }
+            var className = tokens.slice(0, idx).join(".");
+            var classPrototype = protoWithName(className);
+            classPrototype.props[tokens[idx + 1]] = node.right;
+            return;
+        }
     });
+}
+
+function memberOrIdentifier(node) {
+    return node.type === "MemberExpression" || node.type === "Identifier";
+}
+
+function endsWithPrototype(node) {
+    return node.type === "MemberExpression" && node.property &&
+        node.property.type === "Identifier" && node.property.name === "prototype";
+}
+
+function hasPrototype(node) {
+    var tokens = walker.flattenStaticMemberExpression(node);
+    return tokens && tokens.indexOf("prototype") !== -1;
 }
