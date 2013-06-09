@@ -1,5 +1,5 @@
 var fs = require('fs')
-  , analyzer = require('../analyzer.js')
+  , analyzer = require('../ast-analyzer.js')
 
 console.assert(process.argv.length > 2);
 var files = process.argv.slice(2);
