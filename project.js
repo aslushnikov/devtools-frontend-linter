@@ -8,15 +8,16 @@ function Project() {
     this._usedClasses = {};
 }
 
-Project.createFromFiles = function() {
+Project.createFromFiles = function(arg) {
     var project = new Project();
-    for(var i = 0; i < arguments.length; ++i) {
-        var text = fs.readFileSync(arguments[i], "utf-8");
+    var files =  Array.isArray(arg) ? arg : arguments;
+    for(var i = 0; i < files.length; ++i) {
+        var text = fs.readFileSync(files[i], "utf-8");
         var ast = analyzer.ast(text);
         var definedFunctions = analyzer.definedFunctions(ast);
         var classPrototypes = analyzer.classPrototypes(ast);
         var usedClasses = analyzer.usedClasses(ast);
-        project.addFile(arguments[i], definedFunctions, classPrototypes, usedClasses);
+        project.addFile(files[i], definedFunctions, classPrototypes, usedClasses);
     }
     return project;
 }
