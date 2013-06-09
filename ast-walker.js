@@ -45,6 +45,8 @@ function flattenStaticMemberExpression(node) {
 /**
  * exports to public API
  */
-exports.walk = walk;
-exports.flattenStaticMemberExpression = flattenStaticMemberExpression;
+module.exports = {
+    walk: walk,
+    flattenStaticMemberExpression: flattenStaticMemberExpression
+};
 

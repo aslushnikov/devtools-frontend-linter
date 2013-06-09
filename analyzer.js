@@ -32,7 +32,7 @@ function classUsages(ast) {
     return classes;
 }
 
-Object.prototype.checkAndSet = function(key, value) {
+function checkAndSet(dict, key, value) {
     if (this[key] !== null) {
         console.warn("Value " + key + " is already used.");
     }
@@ -47,19 +47,19 @@ function definedFunctions(ast) {
     walker.walk(ast, function(node) {
         // function Foo(...) {...)
         if (node.type === "FunctionDeclaration") {
-            funs.checkAndSet(node.id.name, node);
+            checkAndSet(funs, node.id.name, node);
             return;
         }
         // var a = function(..) {..}
         if (node.type === "VariableDeclarator" && node.init.type === "FunctionExpression") {
-           funs.checkAndSet(node.id.name, node.init);
+           checkAndSet(funs, node.id.name, node.init);
            return;
         }
         // Foo.Bar = function(..) {..}
         if (node.type === "AssignmentExpression" && node.right.type === "FunctionExpression" && node.left.type === "MemberExpression") {
             var tokens = walk.flattenStaticMemberExpression(node.left);
             if (tokens) {
-                funs.checkAndSet(tokens.join("."), node.right);
+                checkAndSet(funs, tokens.join("."), node.right);
             }
             return;
         }
@@ -162,7 +162,7 @@ function hasPrototype(node) {
     return tokens && tokens.indexOf("prototype") !== -1;
 }
 
-exports = {
+module.exports = {
     parseAST: parse,
     classUsages: classUsages,
     definedFunctions: definedFunctions,
