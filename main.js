@@ -124,7 +124,7 @@ SourceFile.prototype = {
     analyze: function(instantiations) {
         var src = this;
         walker(this.ast(), function(node) {
-            // logging class instantiation
+            // new class creation
             if (node.type === "NewExpression") {
                 instantiations[src.text(node.callee)] = true;
                 return true; // break walker recursion
