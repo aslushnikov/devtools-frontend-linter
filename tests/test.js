@@ -7,13 +7,38 @@ var files = process.argv.slice(2);
 for(var i = 0; i < files.length; ++i) {
     var data = fs.readFileSync(files[i], "utf-8");
     var ast = analyzer.parseAST(data);
-    console.log(keysArray(analyzer.classUsages(ast)));
+    dumpUsedClasses(ast);
+    dumpDefinedFunctions(ast);
+    dumpClassPrototypes(ast);
 }
 
-function keysArray(dict) {
-    var res = [];
-    for(var i in dict) {
-        res.push(i);
+function dumpUsedClasses(ast) {
+    var usedClasses = analyzer.classUsages(ast);
+    var classes = [];
+    for(var i in usedClasses)
+        classes.push(i);
+    console.log("Used classes: ");
+    console.log(classes);
+}
+
+function dumpDefinedFunctions(ast) {
+    var funs = analyzer.definedFunctions(ast);
+    var f = [];
+    for(var i in funs) {
+        f.push(i);
     }
-    return res;
+    console.log("Defined functions: ");
+    console.log(f);
+}
+
+function dumpClassPrototypes(ast) {
+    console.log("Prototypes: ");
+    var protos = analyzer.classPrototypes(ast);
+    for(var i in protos) {
+        var proto = protos[i];
+        var properties = [];
+        for(var j in proto.props)
+            properties.push(j);
+        console.log(i + ": super=" + protos[i].superClass + " props=" + properties.join(", "));
+    }
 }

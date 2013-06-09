@@ -24,6 +24,7 @@ function classUsages(ast) {
             var tokens = walker.flattenStaticMemberExpression(node.callee);
             if (tokens && tokens[tokens.length - 1] === "call" &&
                 node.arguments.length && node.arguments[0].type === "ThisExpression") {
+                tokens.pop();
                 classes[tokens.join(".")] = node.callee;
             }
             return;
@@ -33,10 +34,10 @@ function classUsages(ast) {
 }
 
 function checkAndSet(dict, key, value) {
-    if (this[key] !== null) {
+    if (dict[key]) {
         console.warn("Value " + key + " is already used.");
     }
-    this[key] = value;
+    dict[key] = value;
 }
 
 /**
@@ -64,7 +65,7 @@ function definedFunctions(ast) {
             return;
         }
     });
-    return definedFunctions;
+    return funs;
 }
 
 /**
@@ -82,6 +83,53 @@ function classPrototypes(ast) {
         };
         return prototypes[className];
     }
+
+    function parsePropertyName(classPrototype, propertyName, propertyValueNode) {
+        if (propertyName !== "__proto__") {
+            checkAndSet(classPrototype.props, propertyName, propertyValueNode);
+            return;
+        }
+        // handle complicated __proto__ case
+        if (propertyValueNode.type === "MemberExpression") {
+            var tokens = walker.flattenStaticMemberExpression(propertyValueNode);
+            // if proto is assigned to smth dynamic/weird, then give up
+            if (!tokens) return;
+            var idx = tokens.indexOf("prototype");
+            // __proto__: Foo.Bar.prototype
+            if (idx === tokens.length - 1) {
+                tokens.pop();
+                classPrototype.superClass = tokens.join(".");
+                return;
+            }
+            // __proto__: Foo.Bar
+            if (idx === -1) {
+                classPrototype.superClass = tokens.join(".");
+                return;
+            }
+            // otherwise we should give up
+            return;
+        }
+        // __proto__: A
+        if (propertyValueNode.type === "Identifier") {
+            classPrototype.superClass = propertyValueNode.name;
+            return;
+        }
+        // __proto__: new ..
+        if (propertyValueNode.type === "NewExpression") {
+            if (propertyValueNode.callee.type === "Identifier") {
+                classPrototype.superClass = propertyValueNode.callee.name;
+                return;
+            } else if (propertyValueNode.callee.type === "MemberExpression") {
+                var tokens = walker.flattenStaticMemberExpression(propertyValueNode.callee);
+                if (!tokens) return;
+                classPrototype.superClass = tokens.join(".");
+                return;
+            }
+            // here we should give up again
+            return;
+        }
+    }
+
     walker.walk(ast, function(node) {
         // Foo.prototype = { .. }
         if (node.type === "AssignmentExpression" &&
@@ -95,12 +143,9 @@ function classPrototypes(ast) {
             var classPrototype = protoWithName(className);
             for(var i = 0; i < node.right.properties.length; ++i) {
                 var rProp = node.right.properties[i];
-                // property key is either foo or "foo"
+                // property key is either literal or string
                 var propertyName = rProp.key.name || rProp.key.value;
-                if (propertyName === "__proto__")
-                    classPrototype.superClass = rProp.value;
-                else
-                    classPrototype.props[propertyName] = rProp.value;
+                parsePropertyName(classPrototype, propertyName, rProp.value);
             }
             return;
         }
@@ -133,7 +178,7 @@ function classPrototypes(ast) {
             node.left.type === "MemberExpression" &&
             !endsWithPrototype(node.left) &&
             hasPrototype(node.left)) {
-            var tokens = walker.flattenStaticMemberExpression(node);
+            var tokens = walker.flattenStaticMemberExpression(node.left);
             var idx = tokens.indexOf("prototype");
             // that's smth like "prototype.foo =.." - wierd case
             if (idx === 0) {
