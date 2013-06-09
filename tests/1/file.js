@@ -26,5 +26,16 @@ B.prototype = {
 function foo() {
 }
 
+B.C = function() {
+}
+
+var funky = {
+    funkyMethod: function() { }
+};
+
+B.C.prototype = {
+    __proto__: funky
+}
+
 new B();
 

@@ -58,7 +58,7 @@ function definedFunctions(ast) {
         }
         // Foo.Bar = function(..) {..}
         if (node.type === "AssignmentExpression" && node.right.type === "FunctionExpression" && node.left.type === "MemberExpression") {
-            var tokens = walk.flattenStaticMemberExpression(node.left);
+            var tokens = walker.flattenStaticMemberExpression(node.left);
             if (tokens) {
                 checkAndSet(funs, tokens.join("."), node.right);
             }
