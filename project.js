@@ -21,8 +21,9 @@ Project.prototype = {
         }
     },
 
-    classes: function() {
+    classesAndFileNames: function() {
         var res = {};
+        var classToFileName = {};
         for(var className in this._usedClasses) {
             var init = this._definedFunctions[className];
             var proto = this._classPrototypes[className];
@@ -30,10 +31,8 @@ Project.prototype = {
                 throw new Error("Class constructor was not defined, but was called");
             if (proto && proto.fileName !== init.fileName)
                 throw new Error("Bad practice: class constructor and prototype defined in different files");
-            res[className] = {
-                fileName: init.fileName,
-                jsclass: new JSClass(className, init, proto)
-            };
+            res[className] = new JSClass(className, init, proto);
+            classToFileName[className] = init.fileName;
         }
 
         for(var className in this._classPrototypes) {
@@ -45,12 +44,13 @@ Project.prototype = {
                 throw new Error("Class constructor was not defined, but prototype was");
             if (proto && proto.fileName !== init.fileName)
                 throw new Error("Bad practice: class constructor and prototype defined in different files");
-            res[className] = {
-                fileName: init.fileName,
-                jsclass: new JSClass(className, init, proto)
-            };
+            res[className] = new JSClass(className, init, proto);
+            classToFileName[className] = init.fileName;
         }
-        return res;
+        return {
+            classes: res,
+            fileNames: classToFileName
+        };
     }
 }
 

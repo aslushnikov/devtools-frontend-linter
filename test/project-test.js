@@ -15,17 +15,27 @@ describe("Project", function() {
     it("should load classes from single file", function() {
         var proj = new Project();
         addToProj(proj, "./test/raw/simpleClass.js");
-        proj.classes().should.have.keys("Foo");
+        proj.classesAndFileNames().classes.should.have.keys("Foo");
     });
     it("should load classes from multiple files", function() {
         var proj = new Project();
         addToProj(proj, "./test/raw/hierarchy-1.js");
         addToProj(proj, "./test/raw/hierarchy-2.js");
-        var classes = proj.classes();
+        var classes = proj.classesAndFileNames().classes;
+        var fileNames = proj.classesAndFileNames().fileNames;
         classes.should.have.keys("Foo", "Bar");
-        should.not.exist(classes.Foo.jsclass.superClass());
-        classes.Foo.fileName.should.be.equal("./test/raw/hierarchy-1.js");
-        classes.Bar.jsclass.superClass().should.be.equal("Foo");
-        classes.Bar.fileName.should.be.equal("./test/raw/hierarchy-2.js");
+        fileNames.should.have.keys("Foo", "Bar");
+        should.not.exist(classes.Foo.superClass());
+        fileNames.Foo.should.be.equal("./test/raw/hierarchy-1.js");
+        classes.Bar.superClass().should.be.equal("Foo");
+        fileNames.Bar.should.be.equal("./test/raw/hierarchy-2.js");
+    });
+    it("should load interfaces as well", function() {
+        var proj = new Project();
+        addToProj(proj, "./test/raw/hierarchy-1.js");
+        addToProj(proj, "./test/raw/hierarchy-2.js");
+        addToProj(proj, "./test/raw/interface.js");
+        var classes = proj.classesAndFileNames().classes;
+        classes.should.have.keys("Foo", "Bar", "SomeInterface");
     });
 });
