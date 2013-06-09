@@ -1,9 +1,24 @@
-var JSClass = require('./jsclass.js');
+var JSClass = require('./jsclass.js')
+  , analyzer = require('./ast-analyzer.js')
+  , fs = require('fs')
 
 function Project() {
     this._definedFunctions = {};
     this._classPrototypes = {};
     this._usedClasses = {};
+}
+
+Project.createFromFiles = function() {
+    var project = new Project();
+    for(var i = 0; i < arguments.length; ++i) {
+        var text = fs.readFileSync(arguments[i], "utf-8");
+        var ast = analyzer.ast(text);
+        var definedFunctions = analyzer.definedFunctions(ast);
+        var classPrototypes = analyzer.classPrototypes(ast);
+        var usedClasses = analyzer.usedClasses(ast);
+        project.addFile(arguments[i], definedFunctions, classPrototypes, usedClasses);
+    }
+    return project;
 }
 
 Project.prototype = {
