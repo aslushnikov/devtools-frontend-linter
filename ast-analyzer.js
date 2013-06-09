@@ -33,13 +33,6 @@ function usedClasses(ast) {
     return classes;
 }
 
-function checkAndSet(dict, key, value) {
-    if (dict[key]) {
-        console.warn("Value " + key + " is already used.");
-    }
-    dict[key] = value;
-}
-
 /**
  * this returns all defined function in the ast
  */
@@ -48,19 +41,19 @@ function definedFunctions(ast) {
     walker.walk(ast, function(node) {
         // function Foo(...) {...)
         if (node.type === "FunctionDeclaration") {
-            checkAndSet(funs, node.id.name, node);
+            funs[node.id.name] = node;
             return;
         }
         // var a = function(..) {..}
-        if (node.type === "VariableDeclarator" && node.init.type === "FunctionExpression") {
-           checkAndSet(funs, node.id.name, node.init);
+        if (node.type === "VariableDeclarator" && node.init && node.init.type === "FunctionExpression") {
+           funs[node.id.name] = node.init;
            return;
         }
         // Foo.Bar = function(..) {..}
         if (node.type === "AssignmentExpression" && node.right.type === "FunctionExpression" && node.left.type === "MemberExpression") {
             var tokens = walker.flattenStaticMemberExpression(node.left);
             if (tokens) {
-                checkAndSet(funs, tokens.join("."), node.right);
+                funs[tokens.join(".")] = node.right;
             }
             return;
         }
@@ -86,7 +79,7 @@ function classPrototypes(ast) {
 
     function parsePropertyName(classPrototype, propertyName, propertyValueNode) {
         if (propertyName !== "__proto__") {
-            checkAndSet(classPrototype.props, propertyName, propertyValueNode);
+            classPrototype.props[propertyName] = propertyValueNode;
             return;
         }
         // handle complicated __proto__ case
@@ -200,7 +193,7 @@ function instanceVariables(ast) {
             node.left.type === "MemberExpression") {
             var tokens = walker.flattenStaticMemberExpression(node.left);
             if (tokens && tokens.length > 1 && tokens[0] === "this") {
-                checkAndSet(ivars, tokens[1], node.right);
+                ivars[tokens[1]] = node.right;
             }
         }
     });

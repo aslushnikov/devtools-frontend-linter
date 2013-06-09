@@ -43,8 +43,10 @@ Project.prototype = {
         for(var className in this._usedClasses) {
             var init = this._definedFunctions[className];
             var proto = this._classPrototypes[className];
-            if (!init)
-                throw new Error("Class constructor was not defined, but was called");
+            if (!init) {
+                // Our "used classes" euristic is not strong enough
+                continue;
+            }
             if (proto && proto.fileName !== init.fileName)
                 throw new Error("Bad practice: class constructor and prototype defined in different files");
             res[className] = new JSClass(className, init, proto);
@@ -56,8 +58,10 @@ Project.prototype = {
                 continue;
             var init = this._definedFunctions[className];
             var proto = this._classPrototypes[className];
-            if (!init)
-                throw new Error("Class constructor was not defined, but prototype was");
+            if (!init) {
+                // this looks like extension an embedded class
+                continue;
+            }
             if (proto && proto.fileName !== init.fileName)
                 throw new Error("Bad practice: class constructor and prototype defined in different files");
             res[className] = new JSClass(className, init, proto);
