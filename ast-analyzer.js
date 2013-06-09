@@ -193,6 +193,20 @@ function classPrototypes(ast) {
     return prototypes;
 }
 
+function instanceVariables(ast) {
+    var ivars = {};
+    walker.walk(ast, function(node) {
+        if (node.type === "AssignmentExpression" &&
+            node.left.type === "MemberExpression") {
+            var tokens = walker.flattenStaticMemberExpression(node.left);
+            if (tokens && tokens.length > 1 && tokens[0] === "this") {
+                checkAndSet(ivars, tokens[1], node.right);
+            }
+        }
+    });
+    return ivars;
+}
+
 function memberOrIdentifier(node) {
     return node.type === "MemberExpression" || node.type === "Identifier";
 }
@@ -211,5 +225,6 @@ module.exports = {
     ast: parse,
     usedClasses: usedClasses,
     definedFunctions: definedFunctions,
-    classPrototypes: classPrototypes
+    classPrototypes: classPrototypes,
+    instanceVariables: instanceVariables
 };

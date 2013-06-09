@@ -27,7 +27,10 @@ function walkNode(node, visitor) {
 function flattenStaticMemberExpression(node) {
     var tokens = [];
     while (node) {
-        if (node.type === "MemberExpression") {
+        if (node.type === "ThisExpression") {
+            tokens.push("this");
+            break;
+        } else if (node.type === "MemberExpression") {
             if (node.property.type !== "Identifier" || node.computed === true)
                 return null;
             tokens.push(node.property.name);

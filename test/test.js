@@ -87,3 +87,12 @@ describe("Prototypes analyzer", function() {
     });
 });
 
+describe("Instance variables analyzer", function() {
+    function ivars(text) {
+        var ast = analyzer.ast(text);
+        return analyzer.instanceVariables(ast);
+    }
+    it("should parse instance variables in functions", function() {
+        ivars("function bar() { this.foo = 1; }").should.have.property("foo");
+    });
+});
