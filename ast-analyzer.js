@@ -8,7 +8,7 @@ function parse(data) {
 /**
  * This function finds all class usages
  */
-function classUsages(ast) {
+function usedClasses(ast) {
     var classes = {};
     walker.walk(ast, function(node) {
         // new Foo(..)
@@ -208,8 +208,8 @@ function hasPrototype(node) {
 }
 
 module.exports = {
-    parseAST: parse,
-    classUsages: classUsages,
+    ast: parse,
+    usedClasses: usedClasses,
     definedFunctions: definedFunctions,
     classPrototypes: classPrototypes
 };

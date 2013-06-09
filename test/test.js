@@ -3,7 +3,7 @@ var fs = require('fs')
 
 describe("Function declarations analyzer", function() {
     function funs(text) {
-        var ast = analyzer.parseAST(text);
+        var ast = analyzer.ast(text);
         return analyzer.definedFunctions(ast);
     }
     it("should report function statement", function() {
@@ -19,8 +19,8 @@ describe("Function declarations analyzer", function() {
 
 describe("Class usage analyzer", function() {
     function classes(text) {
-        var ast = analyzer.parseAST(text);
-        return analyzer.classUsages(ast);
+        var ast = analyzer.ast(text);
+        return analyzer.usedClasses(ast);
     }
     it("should report 'new' statement", function() {
         classes("var a = new Foo()").should.have.keys("Foo");
@@ -39,7 +39,7 @@ describe("Class usage analyzer", function() {
 
 describe("Prototypes analyzer", function() {
     function protos(text) {
-        var ast = analyzer.parseAST(text);
+        var ast = analyzer.ast(text);
         return analyzer.classPrototypes(ast);
     }
     it("should parse prototype object expression", function() {
