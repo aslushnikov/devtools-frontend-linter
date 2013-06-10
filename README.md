@@ -25,9 +25,10 @@ Note that file order does not matter for the linter at the moment.
 
 ```
 $ make test # runs mocha tests
-$ make cover $ runs istanbul to analyze code coverage
+$ make cover # runs istanbul to analyze code coverage
+```
 
 ## Details
 
-The linter analyzes AST (with [esprima](https://github.com/ariya/esprima) to infer classes, their inheritance and their ivars.
+The linter analyzes AST (which is built with [esprima](https://github.com/ariya/esprima) to infer classes, their inheritance and their ivars.
 
