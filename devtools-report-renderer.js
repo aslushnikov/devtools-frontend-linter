@@ -31,7 +31,7 @@ function renderReport(entryRenderer, report) {
         console.log(entryRenderer(report[i]));
 
     if (report.length)
-        console.log(("\nTotal errors: " + report.length).red);
+        console.log(("Total errors: " + report.length).red);
     else
         console.log("No errors found".green);
 }

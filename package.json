@@ -2,7 +2,7 @@
   "author": "lushnikov@google.com <lushnikov@google.com>",
   "name": "linter",
   "description": "playing with esprima",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "repository": {
     "url": ""
   },
@@ -11,7 +11,8 @@
     "colors": ">=0.6.0",
     "istanbul": ">=0.1.36",
     "should": ">=1.2.2",
-    "mocha": ">=1.10.0"
+    "mocha": ">=1.10.0",
+    "commander": ">=1.1.1"
   },
   "devDependencies": {},
   "optionalDependencies": {},
