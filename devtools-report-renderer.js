@@ -2,9 +2,9 @@ var colors = require('colors')
 
 function renderEntryFull(entry) {
     if (entry.type === "ivar_clash") {
-        var s = "Private ivar clash: ".red + ("this." + entry.ivar).bold;
-        s += "\n    - found in ".grey + entry.className1 + (" (" + entry.fileName1 + ")").grey;
-        s += "\n    - found in ".grey + entry.className2 + (" (" + entry.fileName2 + ")").grey;
+        var s = "Private ivar reused: " + ("this." + entry.ivar).bold;
+        s += "\n    - found in " + entry.className1.bold + (" (" + entry.fileName1 + ")");
+        s += "\n    - found in " + entry.className2.bold + (" (" + entry.fileName2 + ")");
         return s;
     } else if (entry.type === "missing_super") {
         var s = "Super class declaration missing";
@@ -16,9 +16,8 @@ function renderEntryFull(entry) {
 
 function renderEntryOneLine(entry) {
     if (entry.type === "ivar_clash") {
-        var className1 = entry.className1 + "." + entry.ivar;
-        var className2 = entry.className2 + "." + entry.ivar;
-        return className1.bold + " clashed with ".red + className2.bold;
+        var ivar = "this." + entry.ivar;
+        return "Private var " + ivar.bold + " gets assigned in " + entry.className1.bold + " and " + entry.className2.bold;
     } else if (entry.type === "missing_super") {
         var superClass = entry.missing;
         var reference = entry.referenced;
