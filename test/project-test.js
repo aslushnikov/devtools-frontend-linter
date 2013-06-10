@@ -1,4 +1,4 @@
-var Project = require('../project.js')
+var Project = require('../lib/project.js')
   , should = require('should')
 
 describe("Project", function() {

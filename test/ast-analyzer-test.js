@@ -1,5 +1,5 @@
 var fs = require('fs')
-  , analyzer = require('../ast-analyzer.js')
+  , analyzer = require('../lib/ast-analyzer.js')
 
 describe("Function declarations analyzer", function() {
     function funs(text) {

@@ -1,9 +1,15 @@
 # DevTools Frontend Linter
 
-This linter currently does only a single check that
-private variables defined in super classes do not get overwritten
+This linter checks that private variables
+defined in super classes do not get overwritten
 by subclasses (unless both superclass and subclass are defined
-in the same file).
+in the same file). This code convention is forced by Chromium DevTools
+team but is not checked by closure compiler.
+
+The convention might by illustrated with [Foo.js](https://github.com/aslushnikov/devtools-frontend-linter/blob/master/test/raw/devtoolsFoo.js)
+and [Bar.js](https://github.com/aslushnikov/devtools-frontend-linter/blob/master/test/raw/devtoolsBar.js).
+In this case class `Bar` must not write anything to `_shortcuts` variable,
+but class `Baz` has full access to `_shortcuts` and can even redefine `_registerShortcuts`.
 
 ## Installation
 

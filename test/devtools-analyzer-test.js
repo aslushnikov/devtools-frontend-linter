@@ -1,5 +1,5 @@
-var devToolsAnalyzer = require("../devtools-analyzer.js")
-  , Project = require("../project.js")
+var devToolsAnalyzer = require("../lib/devtools-analyzer.js")
+  , Project = require("../lib/project.js")
 
 describe("DevTools analyzer", function() {
     it("should detect private vars overlapping", function() {

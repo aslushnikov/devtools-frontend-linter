@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-var Project = require('./project.js')
-  , devTools = require('./devtools-analyzer.js')
-  , renderer = require('./devtools-report-renderer.js')
+var Project = require('./lib/project.js')
+  , devTools = require('./lib/devtools-analyzer.js')
+  , renderer = require('./lib/devtools-report-renderer.js')
   , program = require('commander')
 
 program
@@ -13,8 +13,8 @@ program
 
 program.on("--help", function() {
     console.log("  Examples:");
-    console.log("    $ ./main.js --full ./test/raw/devtools*");
-    console.log("    $ ./main.js --oneline ./test/raw/devtools*");
+    console.log("    $ ./lint.js --full ./test/raw/devtools*");
+    console.log("    $ ./lint.js --oneline ./test/raw/devtools*");
 });
 
 program.parse(process.argv);

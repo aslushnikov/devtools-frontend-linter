@@ -1,6 +1,6 @@
-var analyzer = require('../ast-analyzer.js')
+var analyzer = require('../lib/ast-analyzer.js')
   , fs = require('fs')
-  , JSClass = require('../jsclass.js')
+  , JSClass = require('../lib/jsclass.js')
 
 describe("JSClass", function() {
     it("should be correctly created", function() {
