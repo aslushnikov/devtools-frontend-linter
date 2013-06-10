@@ -6,10 +6,5 @@ var Project = require('./project.js')
 
 console.assert(process.argv.length > 2);
 var proj = Project.createFromFiles(process.argv.slice(2));
-var report = renderer.renderReport(devTools.checkClassInheritance(proj));
-if (report.length) {
-    for(var i = 0; i < report.length; ++i)
-        console.log(report[i]);
-} else {
-    console.log("0 errors found");
-}
+renderer.oneline(devTools.checkClassInheritance(proj));
+
