@@ -30,5 +30,5 @@ $ make cover # runs istanbul to analyze code coverage
 
 ## Details
 
-The linter analyzes AST (which is built with [esprima](https://github.com/ariya/esprima) to infer classes, their inheritance and their ivars.
+The linter analyzes AST (which is built with [esprima](https://github.com/ariya/esprima)) to infer classes, their inheritance and their ivars.
 
