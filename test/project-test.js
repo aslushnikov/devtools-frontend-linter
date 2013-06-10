@@ -28,4 +28,14 @@ describe("Project", function() {
         var classes = proj.classesAndFileNames().classes;
         classes.should.have.keys("Foo", "Bar", "SomeInterface");
     });
+    it("should throw exception if some file has bad syntax", function() {
+        (function() {
+            Project.createFromFiles("./test/raw/bad-syntax.js");
+        }).should.throw();
+        try {
+            Project.createFromFiles("./test/raw/bad-syntax.js");
+        } catch (e) {
+            e.should.be.an.instanceof(Project.ParseError);
+        }
+    });
 });

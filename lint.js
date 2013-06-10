@@ -22,7 +22,14 @@ program.parse(process.argv);
 if (!program.args.length)
     program.help();
 
-var proj = Project.createFromFiles(program.args);
+try {
+    var proj = Project.createFromFiles(program.args);
+} catch (e) {
+    if (e instanceof Project.ParseError) {
+        console.log("Bad syntax in " + e.fileName());
+        process.exit(1);
+    }
+}
 if (program.oneline)
     renderer.oneline(devTools.checkClassInheritance(proj));
 else
